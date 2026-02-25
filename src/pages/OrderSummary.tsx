@@ -80,7 +80,10 @@ const OrderSummary = () => {
         </div>
 
         {/* CTA */}
-        <button className="mt-6 w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98]">
+        <button
+          onClick={() => navigate("/payment", { state: { items, restaurantName } })}
+          className="mt-6 w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98]"
+        >
           Proceed to Payment
         </button>
       </main>

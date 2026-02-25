@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Star, Clock, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Star, Clock, Minus, Plus, ShoppingBag } from "lucide-react";
 import { restaurants } from "@/data/restaurants";
 import { restaurantMenus } from "@/data/menu";
 
@@ -21,6 +21,21 @@ const RestaurantPage = () => {
 
   const restaurant = restaurants.find((r) => r.id === Number(id));
   const menu = restaurantMenus[Number(id)] ?? [];
+  const categories = [...new Set(menu.map((item) => item.category))];
+
+  const totalItems = useMemo(
+    () => Object.values(counts).reduce((sum, c) => sum + c, 0),
+    [counts]
+  );
+
+  const grandTotal = useMemo(
+    () =>
+      Object.entries(counts).reduce((sum, [itemId, qty]) => {
+        const item = menu.find((m) => m.id === Number(itemId));
+        return sum + (item ? item.price * qty : 0);
+      }, 0),
+    [counts, menu]
+  );
 
   if (!restaurant) {
     return (
@@ -46,7 +61,13 @@ const RestaurantPage = () => {
     });
   };
 
-  const categories = [...new Set(menu.map((item) => item.category))];
+  const handleViewOrder = () => {
+    const orderItems = Object.entries(counts).map(([itemId, qty]) => {
+      const item = menu.find((m) => m.id === Number(itemId))!;
+      return { id: item.id, name: item.name, price: item.price, quantity: qty };
+    });
+    navigate(`/order-summary`, { state: { items: orderItems, restaurantName: restaurant.name } });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -161,7 +182,31 @@ const RestaurantPage = () => {
             </section>
           ))}
         </div>
+
+        {/* spacer for fixed bottom bar */}
+        {totalItems > 0 && <div className="h-24" />}
       </main>
+
+      {/* Fixed View Order bar */}
+      {totalItems > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/95 backdrop-blur-md">
+          <div className="container mx-auto flex items-center justify-between px-4 py-3">
+            <div>
+              <p className="text-sm font-bold text-foreground">
+                {totalItems} {totalItems === 1 ? "item" : "items"}
+              </p>
+              <p className="text-xs text-muted-foreground">${grandTotal.toFixed(2)}</p>
+            </div>
+            <button
+              onClick={handleViewOrder}
+              className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98]"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              View Order
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

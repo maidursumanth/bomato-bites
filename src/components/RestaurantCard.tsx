@@ -1,4 +1,5 @@
 import { Star, Clock } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import type { Restaurant } from "@/data/restaurants";
 
 interface RestaurantCardProps {
@@ -17,6 +18,7 @@ const PriceLevel = ({ level }: { level: number }) => (
 );
 
 const RestaurantCard = ({ restaurant, index }: RestaurantCardProps) => {
+  const navigate = useNavigate();
   return (
     <div
       className="group animate-fade-in-up overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
@@ -68,7 +70,10 @@ const RestaurantCard = ({ restaurant, index }: RestaurantCardProps) => {
           </div>
         </div>
 
-        <button className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98]">
+        <button
+          onClick={() => navigate(`/restaurant/${restaurant.id}`)}
+          className="mt-3 w-full rounded-xl bg-primary py-2.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98]"
+        >
           Order Now
         </button>
       </div>

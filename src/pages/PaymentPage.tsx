@@ -1,6 +1,8 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { ArrowLeft, CreditCard, MapPin, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CreditCard, MapPin, Wallet, Banknote, Loader2 } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface OrderItem {
   id: number;
@@ -9,6 +11,8 @@ interface OrderItem {
   quantity: number;
 }
 
+type PaymentMethod = "upi" | "card" | "cod";
+
 const PaymentPage = () => {
   const navigate = useNavigate();
   const { state } = useLocation() as {
@@ -16,11 +20,10 @@ const PaymentPage = () => {
   };
 
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvv, setCvv] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("upi");
+  const [loading, setLoading] = useState(false);
 
   if (!state || !state.items?.length) {
     return (
@@ -38,52 +41,21 @@ const PaymentPage = () => {
   const { items, restaurantName } = state;
   const grandTotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const isValid = fullName.trim() && address.trim() && cardNumber.trim().length >= 12 && expiry.trim() && cvv.trim().length >= 3;
+  const isValid = fullName.trim() && phone.trim().length >= 10 && address.trim();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!isValid) return;
-    setSubmitted(true);
+    setLoading(true);
+    setTimeout(() => {
+      navigate("/order-confirmation", { state: { items, restaurantName, grandTotal } });
+    }, 2000);
   };
 
-  if (submitted) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-md animate-fade-in-up text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <CheckCircle2 className="h-8 w-8 text-primary" />
-          </div>
-          <h1 className="font-display text-2xl font-black tracking-tight text-foreground">
-            Order Confirmed!
-          </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Your order from {restaurantName} is being prepared.
-          </p>
-          <button
-            onClick={() => navigate("/")}
-            className="mt-8 w-full rounded-xl bg-primary py-3 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Back to Home
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const formatCardNumber = (val: string) => {
-    const digits = val.replace(/\D/g, "").slice(0, 16);
-    return digits.replace(/(.{4})/g, "$1 ").trim();
-  };
-
-  const formatExpiry = (val: string) => {
-    const digits = val.replace(/\D/g, "").slice(0, 4);
-    if (digits.length > 2) return digits.slice(0, 2) + "/" + digits.slice(2);
-    return digits;
-  };
+  const buttonText = paymentMethod === "cod" ? "Place Order" : "Pay Now";
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="container mx-auto flex items-center gap-3 px-4 py-4">
           <button
@@ -146,6 +118,13 @@ const PaymentPage = () => {
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
               />
+              <input
+                type="tel"
+                placeholder="Phone Number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 15))}
+                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
               <textarea
                 placeholder="Delivery Address"
                 rows={3}
@@ -156,49 +135,51 @@ const PaymentPage = () => {
             </div>
           </section>
 
-          {/* Card Details */}
+          {/* Payment Method */}
           <section>
             <div className="mb-3 flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-primary" />
               <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-                Card Details
+                Payment Method
               </h2>
             </div>
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Card Number"
-                value={cardNumber}
-                onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium tracking-wider text-foreground placeholder:text-muted-foreground placeholder:tracking-normal focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  placeholder="MM/YY"
-                  value={expiry}
-                  onChange={(e) => setExpiry(formatExpiry(e.target.value))}
-                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-                <input
-                  type="text"
-                  placeholder="CVV"
-                  maxLength={4}
-                  value={cvv}
-                  onChange={(e) => setCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                  className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                />
-              </div>
-            </div>
+            <RadioGroup
+              value={paymentMethod}
+              onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}
+              className="space-y-2"
+            >
+              {[
+                { value: "upi", label: "UPI", icon: Wallet },
+                { value: "card", label: "Credit / Debit Card", icon: CreditCard },
+                { value: "cod", label: "Cash on Delivery", icon: Banknote },
+              ].map(({ value, label, icon: Icon }) => (
+                <Label
+                  key={value}
+                  htmlFor={value}
+                  className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-card px-4 py-3.5 transition-colors hover:bg-secondary/50 has-[data-state=checked]:border-primary has-[data-state=checked]:bg-primary/5"
+                >
+                  <RadioGroupItem value={value} id={value} />
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-semibold text-foreground">{label}</span>
+                </Label>
+              ))}
+            </RadioGroup>
           </section>
 
           {/* Submit */}
           <button
             type="submit"
-            disabled={!isValid}
-            className="w-full rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!isValid || loading}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-sm font-bold text-primary-foreground transition-colors hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Pay ${grandTotal.toFixed(2)}
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Processing…
+              </>
+            ) : (
+              `${buttonText} — $${grandTotal.toFixed(2)}`
+            )}
           </button>
         </form>
       </main>
